@@ -1,0 +1,161 @@
+classDiagram
+    direction LR
+
+    class UserRole { <<enumeration>> user admin }
+    class AccountStatus { <<enumeration>> active inactive }
+    class StudySessionStatus { <<enumeration>> planned in_progress completed skipped }
+    class TransactionStatus { <<enumeration>> pending paid failed expired }
+    class SubscriptionStatus { <<enumeration>> active expired cancelled }
+
+    class User {
+        +UUID id
+        +string name
+        +string email
+        -string passwordHash
+        +UserRole role
+        +AccountStatus status
+        +Date lastLoginAt
+        +Date createdAt
+        +Date updatedAt
+        +isAdmin() boolean
+        +isActive() boolean
+        +activate() void
+        +deactivate() void
+        +recordLogin() void
+    }
+
+    class AuthSession {
+        +UUID id
+        +UUID userId
+        -string tokenHash
+        +string userAgent
+        +string ipAddress
+        +Date expiresAt
+        +Date revokedAt
+        +Date createdAt
+        +isValid() boolean
+        +revoke() void
+    }
+
+    class StudySchedule {
+        +UUID id
+        +UUID userId
+        +string title
+        +string description
+        +Date startTime
+        +Date endTime
+        +Date createdAt
+        +Date updatedAt
+        +durationMinutes() number
+    }
+
+    class StudySession {
+        +UUID id
+        +UUID scheduleId
+        +UUID userId
+        +StudySessionStatus status
+        +Date startedAt
+        +Date completedAt
+        +start() void
+        +complete() void
+        +skip() void
+    }
+
+    class AiSummary {
+        +UUID id
+        +UUID userId
+        +string title
+        +string sourceContent
+        +string summaryContent
+        +Date createdAt
+    }
+
+    class SubscriptionPlan {
+        +UUID id
+        +string code
+        +string name
+        +number price
+        +string currency
+        +number durationDays
+        +boolean isActive
+        +Date createdAt
+    }
+
+    class Transaction {
+        +UUID id
+        +string orderId
+        +UUID userId
+        +UUID planId
+        +number amount
+        +string currency
+        +TransactionStatus status
+        +string paymentMethod
+        +string gatewayTransactionId
+        +string paymentUrl
+        +Date expiresAt
+        +Date paidAt
+        +Date createdAt
+        +Date updatedAt
+        +isPending() boolean
+        +amountMatches(gross) boolean
+        +markPaid(at) void
+        +markFailed() void
+        +markExpired() void
+    }
+
+    class PaymentNotification {
+        +UUID id
+        +UUID transactionId
+        +string gatewayEventId
+        +JSON payload
+        +boolean processed
+        +boolean needsReview
+        +string reviewNote
+        +Date receivedAt
+        +Date processedAt
+        +flagForReview(note) void
+        +markProcessed() void
+    }
+
+    class Subscription {
+        +UUID id
+        +UUID userId
+        +UUID planId
+        +UUID transactionId
+        +SubscriptionStatus status
+        +Date startAt
+        +Date endAt
+        +Date createdAt
+        +isActiveNow() boolean
+        +cancel() void
+        +expire() void
+    }
+
+    class AdminAuditLog {
+        +UUID id
+        +UUID adminId
+        +UUID targetUserId
+        +string action
+        +string note
+        +Date createdAt
+    }
+
+    User "1" --> "0..*" AuthSession : punya
+    User "1" --> "0..*" StudySchedule : membuat
+    User "1" --> "0..*" StudySession : menjalani
+    StudySchedule "1" --> "0..*" StudySession : dijalankan lewat
+    User "1" --> "0..*" AiSummary : memiliki
+    User "1" --> "0..*" Transaction : membayar
+    SubscriptionPlan "1" --> "0..*" Transaction : dipesan
+    SubscriptionPlan "1" --> "0..*" Subscription : paket
+    Transaction "1" --> "0..1" Subscription : mengaktifkan
+    Transaction "0..1" --> "0..*" PaymentNotification : dinotifikasi
+    User "1" --> "0..*" Subscription : berlangganan
+    User "1" --> "0..*" AdminAuditLog : admin melakukan
+    User "0..1" --> "0..*" AdminAuditLog : menjadi target
+
+    User --> UserRole
+    User --> AccountStatus
+    StudySession --> StudySessionStatus
+    Transaction --> TransactionStatus
+    Subscription --> SubscriptionStatus

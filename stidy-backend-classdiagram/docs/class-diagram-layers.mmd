@@ -1,0 +1,112 @@
+classDiagram
+    direction TB
+
+    class AuthController { +register() +login() +refresh() +logout() +me() }
+    class ScheduleController { +list() +get() +create() +update() +remove() }
+    class StudySessionController { +list() +start() +complete() +skip() }
+    class AiSummaryController { +list() +get() +create() +remove() }
+    class PaymentController { +listPlans() +checkout() +listMine() +getMine() +webhook() }
+    class SubscriptionController { +status() +history() }
+    class AdminController { +dashboard() +listUsers() +setUserStatus() +reviewNotifications() +auditLogs() }
+
+    class AuthService {
+        +register(dto) User
+        +login(dto, ctx) TokenPair
+        +refresh(token) TokenPair
+        +logout(token) void
+    }
+    class ScheduleService {
+        +list(userId) StudySchedule[]
+        +create(userId, dto) StudySchedule
+        +update(userId, id, dto) StudySchedule
+        +remove(userId, id) void
+    }
+    class StudySessionService {
+        +list(userId) StudySession[]
+        +start(userId, id) StudySession
+        +complete(userId, id) StudySession
+        +skip(userId, id) StudySession
+    }
+    class AiSummaryService {
+        +create(userId, dto) AiSummary
+        +list(userId) AiSummary[]
+        +get(userId, id) AiSummary
+        +remove(userId, id) void
+    }
+    class PaymentService {
+        +listPlans() SubscriptionPlan[]
+        +checkout(userId, planCode) Transaction
+        +listMine(userId) Transaction[]
+        +getMine(userId, id) Transaction
+        +handleNotification(payload) NotificationResult
+    }
+    class SubscriptionService {
+        +isPremium(userId) boolean
+        +assertPremium(userId) void
+        +activateFromTransaction(trx, plan, db) Subscription
+        +expireOverdue() number
+    }
+    class AdminService {
+        +dashboard() DashboardStats
+        +listUsers(filter) User[]
+        +setUserStatus(adminId, userId, status, note) User
+        +listReviewNotifications() PaymentNotification[]
+        +auditLogs() AdminAuditLog[]
+    }
+
+    class PaymentGateway { <<interface>> +createCharge(trx, plan, user) ChargeResult +verifySignature(payload) boolean +mapStatus(raw) TransactionStatus }
+    class MidtransGateway { +createCharge() +verifySignature() +mapStatus() }
+    class AiProvider { <<interface>> +summarize(text) string }
+    class ClaudeProvider { +summarize(text) string }
+
+    class BaseRepository~T~ { #db Queryable #table string +findById(id) T +delete(id) void }
+    class UserRepository
+    class AuthSessionRepository
+    class StudyScheduleRepository
+    class StudySessionRepository
+    class AiSummaryRepository
+    class SubscriptionPlanRepository
+    class TransactionRepository
+    class PaymentNotificationRepository
+    class SubscriptionRepository
+    class AdminAuditLogRepository
+
+    AuthController --> AuthService
+    ScheduleController --> ScheduleService
+    StudySessionController --> StudySessionService
+    AiSummaryController --> AiSummaryService
+    PaymentController --> PaymentService
+    SubscriptionController --> SubscriptionService
+    AdminController --> AdminService
+
+    AuthService --> UserRepository
+    AuthService --> AuthSessionRepository
+    ScheduleService --> StudyScheduleRepository
+    ScheduleService --> StudySessionRepository
+    StudySessionService --> StudySessionRepository
+    AiSummaryService --> AiSummaryRepository
+    AiSummaryService --> SubscriptionService
+    AiSummaryService --> AiProvider
+    PaymentService --> TransactionRepository
+    PaymentService --> SubscriptionPlanRepository
+    PaymentService --> PaymentNotificationRepository
+    PaymentService --> SubscriptionService
+    PaymentService --> PaymentGateway
+    SubscriptionService --> SubscriptionRepository
+    AdminService --> UserRepository
+    AdminService --> AuthSessionRepository
+    AdminService --> AdminAuditLogRepository
+    AdminService --> PaymentNotificationRepository
+
+    MidtransGateway ..|> PaymentGateway
+    ClaudeProvider ..|> AiProvider
+    BaseRepository <|-- UserRepository
+    BaseRepository <|-- AuthSessionRepository
+    BaseRepository <|-- StudyScheduleRepository
+    BaseRepository <|-- StudySessionRepository
+    BaseRepository <|-- AiSummaryRepository
+    BaseRepository <|-- SubscriptionPlanRepository
+    BaseRepository <|-- TransactionRepository
+    BaseRepository <|-- PaymentNotificationRepository
+    BaseRepository <|-- SubscriptionRepository
+    BaseRepository <|-- AdminAuditLogRepository
